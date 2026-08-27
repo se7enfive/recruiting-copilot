@@ -1,7 +1,7 @@
 ---
 name: recruit-init
 description: >
-  初始化招聘工作区：检查 boss-cli / liepin-cli / lark-cli 前置依赖，创建标准目录骨架
+  初始化招聘工作区：检查 boss-cli / liepin-cli / 51job-cli / lark-cli 前置依赖，创建标准目录骨架
   （CONTEXT.md 事实源 + AGENTS.md 协作约定 + 01-jd~05-onboarding 漏斗目录 + 台账），
   把工作流文档拷进工作区，为 Codex / Claude Code / Qoder 注册项目级 skill，
   然后逐个岗位启动 /recruit-grill 梳理真实岗位要求。
@@ -20,10 +20,10 @@ description: >
 sh skills/recruit-init/scripts/install-dependencies.sh
 ```
 
-脚本会检查 Node.js，安装 Boss / 猎聘 CLI，并在 macOS 等环境中自动修复 npm
+脚本会检查 Node.js，安装 Boss / 猎聘 / 51job 三个 CLI，并在 macOS 等环境中自动修复 npm
 全局命令的 `PATH`。默认安装已适配当前 Boss 前端的维护版：
 `git+https://github.com/Viy1204/boss-cli.git#main`。如需替换来源，可在运行前设置
-`BOSS_CLI_SOURCE`。
+`BOSS_CLI_SOURCE`（猎聘为 `LIEPIN_CLI_SOURCE`，51job 为 `SJOB_CLI_SOURCE`）。
 
 如果当前 agent 没有全局安装权限，先给同一脚本加 `--check-only`
 获取诊断结果。**无论是权限、Node/npm/git 缺失、网络、构建还是包安装失败，
@@ -36,8 +36,10 @@ sh skills/recruit-init/scripts/install-dependencies.sh
    `npm install -g git+...`：部分 npm 版本会把它留成指向临时缓存的符号链接。
    本脚本会先构建并打包 fork，再安装持久化的包文件。
 3. `liepin --version` —— 猎聘 CLI。没有 → 重跑同一安装脚本，不另外维护第二条安装路径。
-4. 本机装有 Chrome 或 Edge（两个 CLI 都靠它驱动真实浏览器）。
-5. **可选**：`lark-cli --version` —— 有且已配置飞书应用凭证 → 日报出飞书云文档、
+4. `51job --version` —— 51job（前程无忧）CLI。没有 → 重跑同一安装脚本。
+   它驱动本机 Chrome/Edge 操作 51job 网页版，登录态随账号保存在本机。
+5. 本机装有 Chrome 或 Edge（三个 CLI 都靠它驱动真实浏览器）。
+6. **可选**：`lark-cli --version` —— 有且已配置飞书应用凭证 → 日报出飞书云文档、
    约面试可直接建日历日程，也可从飞书邮箱收取简历；没有 → 明确告知用户
    "日报将输出本地 Markdown 到 runtime/reports/，约面试提供手动建会清单，邮箱简历需本地提供；
    寻源、本地简历 review 和台账功能不受影响"。**不要求用户必须装。**
@@ -46,7 +48,7 @@ sh skills/recruit-init/scripts/install-dependencies.sh
 更新当前 shell 的配置文件（zsh 为 `~/.zprofile`，bash 为 `~/.bash_profile`）：
 安装过程立即使用新路径，用户之后新开的终端也会自动生效。
 
-装好 CLI 后提醒用户各跑一次 `boss login` 和 `liepin login`（扫码登录，登录态持久化）。
+装好 CLI 后提醒用户各跑一次 `boss login`、`liepin login` 和 `51job login`（扫码登录，登录态持久化）。
 如果用户此刻登录不了（比如手机不在身边），记入收尾提醒，继续建仓。
 
 ## Step 2 创建工作区骨架

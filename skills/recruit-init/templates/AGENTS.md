@@ -18,6 +18,7 @@
 |---|---|
 | 不确定该走哪个流程 / 用户问"这套工具怎么用" | `skills/ask-viy/SKILL.md` |
 | 每日招聘：查未读 / 主动寻源 / 初筛 / 打招呼 / 补台账 / 出日报 | `skills/recruit-daily/SKILL.md` |
+| 51job 单通道每日招聘（查未读 / 寻源 / 初筛 / 打招呼 / 台账 / 日报） | `skills/recruit-daily-51job/SKILL.md` |
 | 深度盘点某岗市场人才：供给/薪资对标/目标公司有谁/好不好招 | `skills/market-talent-mapping/SKILL.md` |
 | 本地简历（猎头/内推/直投）要评估，或收取飞书邮箱近期猎聘/BOSS 简历附件，或回查某人评级 | `skills/resume-review/SKILL.md` |
 | 约面试 / 面试改期取消：建日程拉面试官、通知候选人、同步档案 | `skills/interview-schedule/SKILL.md` |
@@ -25,6 +26,7 @@
 | 重建 / 修复工作区结构 | `skills/recruit-init/SKILL.md` |
 | boss 直聘 CLI 命令细节 | `skills/recruit-daily/references/channels.md` + `boss help` |
 | 猎聘 CLI 命令细节 | `skills/recruit-daily/references/channels.md` + `liepin help` |
+| 51job（前程无忧）CLI 命令细节 | `skills/recruit-daily-51job/references/channels-51job.md` + `51job help` |
 
 ## 会话卫生（跨会话记忆只有文件）
 
