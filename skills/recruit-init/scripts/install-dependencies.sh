@@ -3,6 +3,7 @@ set -eu
 
 BOSS_CLI_SOURCE=${BOSS_CLI_SOURCE:-git+https://github.com/Viy1204/boss-cli.git#main}
 LIEPIN_CLI_SOURCE=${LIEPIN_CLI_SOURCE:-@viyzhu/liepin-cli}
+SJOB_CLI_SOURCE=${SJOB_CLI_SOURCE:-git+https://github.com/se7enfive/51job-cli.git#main}
 PROFILE_BLOCK_START='# >>> recruiting-copilot npm global bin >>>'
 PROFILE_BLOCK_END='# <<< recruiting-copilot npm global bin <<<'
 CHECK_ONLY=0
@@ -11,12 +12,13 @@ usage() {
   cat <<'EOF'
 Usage: install-dependencies.sh [--check-only]
 
-Installs recruiting-copilot's Boss and Liepin CLIs. On macOS and other
+Installs recruiting-copilot's Boss, Liepin and 51job CLIs. On macOS and other
 Unix-like systems, it also repairs the npm global executable PATH when needed.
 
 Environment overrides:
   BOSS_CLI_SOURCE    npm install source for Boss CLI
   LIEPIN_CLI_SOURCE  npm install source for Liepin CLI
+  SJOB_CLI_SOURCE    npm install source for 51job CLI
 EOF
 }
 
@@ -95,6 +97,8 @@ write_managed_path_block() {
 printf 'Node.js: v%s\n' "$node_major"
 printf 'npm global bin: %s\n' "$npm_bin"
 printf 'Boss CLI source: %s\n' "$BOSS_CLI_SOURCE"
+printf 'Liepin CLI source: %s\n' "$LIEPIN_CLI_SOURCE"
+printf '51job CLI source: %s\n' "$SJOB_CLI_SOURCE"
 
 if ! path_contains "$npm_bin"; then
   if [ "$CHECK_ONLY" -eq 1 ]; then
@@ -150,14 +154,53 @@ npm install -g "$boss_install_source"
 printf 'Installing Liepin CLI...\n'
 npm install -g "$LIEPIN_CLI_SOURCE"
 
+sjob_install_source=$SJOB_CLI_SOURCE
+sjob_build_dir=''
+case "$SJOB_CLI_SOURCE" in
+  git+*'#'*)
+    command -v git >/dev/null 2>&1 || die 'git is required to build the 51job CLI.'
+    sjob_repository=${SJOB_CLI_SOURCE#git+}
+    sjob_repository=${sjob_repository%#*}
+    sjob_ref=${SJOB_CLI_SOURCE##*#}
+    [ -n "$sjob_repository" ] || die '51job CLI repository is empty.'
+    [ -n "$sjob_ref" ] || die '51job CLI git ref is empty.'
+
+    sjob_build_dir=$(mktemp -d "${TMPDIR:-/tmp}/recruiting-copilot-sjob.XXXXXX")
+    cleanup_sjob_build() {
+      rm -rf "$sjob_build_dir"
+    }
+    trap cleanup_sjob_build 0 HUP INT TERM
+
+    printf 'Cloning 51job CLI (%s)...\n' "$sjob_ref"
+    git clone --depth 1 --branch "$sjob_ref" "$sjob_repository" "$sjob_build_dir/source"
+    printf 'Building 51job CLI...\n'
+    (
+      cd "$sjob_build_dir/source"
+      npm ci
+      npm run build
+      npm pack --pack-destination "$sjob_build_dir"
+    )
+    set -- "$sjob_build_dir"/*.tgz
+    [ "$#" -eq 1 ] && [ -f "$1" ] || die '51job CLI build did not produce exactly one package archive.'
+    sjob_install_source=$1
+    ;;
+esac
+
+printf 'Installing 51job CLI...\n'
+npm install -g "$sjob_install_source"
+
 boss_executable=$npm_bin/boss
 liepin_executable=$npm_bin/liepin
+sjob_executable=$npm_bin/51job
 [ -x "$boss_executable" ] || die "Boss CLI executable not found at $boss_executable"
 [ -x "$liepin_executable" ] || die "Liepin CLI executable not found at $liepin_executable"
+[ -x "$sjob_executable" ] || die "51job CLI executable not found at $sjob_executable"
 
 "$boss_executable" help >/dev/null 2>&1
 "$liepin_executable" --version >/dev/null 2>&1
+"$sjob_executable" --version >/dev/null 2>&1
 
 printf 'Boss CLI ready: %s\n' "$boss_executable"
 printf 'Liepin CLI ready: %s\n' "$liepin_executable"
-printf 'Next: run "boss login" and "liepin login" once in a new terminal.\n'
+printf '51job CLI ready: %s\n' "$sjob_executable"
+printf 'Next: run "boss login", "liepin login" and "51job login" once in a new terminal.\n'
