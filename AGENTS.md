@@ -20,7 +20,9 @@
 ```
 skills/recruit-init/           初始化流程 + 工作区脚手架模板（templates/）
 skills/recruit-grill/          逐岗逼问式梳理岗位真实要求（+ 问题清单）
-skills/recruit-daily/          每日招聘流水线（+ 双通道命令参考、台账日报格式）
+skills/recruit-daily/          每日招聘流水线（+ BOSS/猎聘双通道命令参考、台账日报格式）
+skills/recruit-daily-51job/    51job 单通道每日招聘流水线（+ 命令参考、台账日报格式）
+skills/51job-env-setup/        51job CLI 环境一键安装与登录引导
 skills/market-talent-mapping/  某岗市场人才深度盘点（+ 渠道与统计参考、报告模板）
 skills/resume-review/          本地/飞书邮箱简历收取与评估（单份或批量）
 skills/interview-schedule/     面试预约：飞书日程+视频会议+拉面试官+档案同步
@@ -28,12 +30,13 @@ skills/ask-viy/                总目录：不知道用哪个流程时问它
 docs/DESIGN.md                 设计思路与理念（为什么长这样）
 .claude-plugin/                Claude Code 插件清单（其他工具忽略即可）
 commands/                      Claude Code slash 命令薄壳（其他工具忽略即可）
-tests/                         安装与工作区 Skill 注册回归测试
+tests/                         安全路由、安装与工作区 Skill 注册回归测试
 ```
 
 ## 红线（对所有 agent 生效）
 
 - 本仓库是**模板**：不要把用户的岗位数据、候选人信息写进本仓库，全部写进用户自己的工作区。
+- `.workbuddy/`、`runtime/` 以及其他本地招聘运行产物可能包含会话、简历或候选人数据，禁止提交；它们应留在用户自己的工作区，并由 `.gitignore` 隔离。
 - 对外不可逆动作（在招聘平台打招呼、点"不合适"、通知候选人、发 offer）默认先经用户确认。
   打招呼的安全规则见 `skills/recruit-daily/SKILL.md`，约面试的确认规则见
   `skills/interview-schedule/SKILL.md`。

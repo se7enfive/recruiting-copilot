@@ -9,10 +9,9 @@
 - `cordis.patch.yml` 是 profile 的 patch 层：启用宿主 `skill-filesystem` 行，
   把本包 `skills/` 目录挂为全局自定义 skill 根（rank 300，custom 源），并挂载
   本包自身（host 插件 + 客户端面板）。
-- `lib/index.js` 是 host 插件：通过 CDP 把 boss-cli 的浏览器变成一只可远程操作的
-  浏览器——`Page.startScreencast` 推帧 + `Input.*` 收事件，暴露
-  `/plugins/recruiting-view/*` 路由（无第三方依赖，只用 Node 内置
-  fetch/WebSocket/child_process）。
+- `lib/index.js` 是 host 插件：通过 CDP 把 boss-cli / liepin-cli 的浏览器变成一只可远程操作的
+  浏览器——`Page.startScreencast` 推帧 + `Input.*` 收事件，暴露 `/plugins/recruiting-view/*` 路由（无第三方依赖，
+  只用 Node 内置 fetch/WebSocket/child_process）。
 - `client.js` 是浏览器端模块：注册进 `shell.overlay` 插槽，在 Web UI 右侧渲染
   可操作的浏览器面板，**dock 列形态**（打开时给 `#root` 加 `margin-right` 让出
   宽度，聊天不被遮挡，视觉与 DSH 内置列一致）：MJPEG 画面、鼠标/滚轮/键盘/IME
@@ -33,9 +32,10 @@ dsh plugin --profile web remove recruiting-copilot
 
 安装后**重启 DSH 会话**：
 
-1. `skills/` 下 7 个 skill（ask-viy、recruit-init、recruit-grill、recruit-daily、
-   resume-review、interview-schedule、market-talent-mapping）在任意工作区可用。
+1. `skills/` 下 9 个 skill（ask-viy、recruit-init、recruit-grill、recruit-daily、
+   recruit-daily-51job、51job-env-setup、resume-review、interview-schedule、market-talent-mapping）在任意工作区可用。
 2. Web UI 右侧出现「招聘浏览器」面板：一只可以直接用的浏览器。
+   该面板当前只镜像 BOSS 与猎聘；51job 使用 `recruit-daily-51job` 和 `51job` CLI，端口 9222 不注册为面板源。
 
 ## 默认模式按源分开（2026-08-19）
 
@@ -124,7 +124,9 @@ RECRUIT_BROWSER_HIDDEN=true      # 三方共读的统一覆盖：本插件 / bos
 - **路由**：`state.json`（状态+标签+视口+熔断）、`stream.mjpg`（实时画面）、
   `frame.jpg`（单帧兜底）、`input`（POST 事件批）、`control`（POST：launch /
   navigate / reload / back / forward / new-tab / close-tab / set-target /
-  activate / fit / unfit / set-mode / watch / clear-risk）。
+  activate / fit / unfit / set-mode / watch / clear-risk）。路由使用当前 DSH 页面专属的
+  HttpOnly、SameSite 会话 cookie（首次握手绑定客户端随机 nonce），并校验同源 Fetch Metadata；路由只接受 loopback Host。
+  `control` 和 `set-target` 拒绝 GET，没有有效会话的请求不会读取画面或触发浏览器动作。部署时仍应让 DSH Web server 只监听 loopback。
 - **风控页熔断**：主 frame 落到 `403.html` / `verify` / `security-check` 等（`RISK_URL_RE`）
   就置上 `state.risk`，此后 host 停掉全部自动动作——不再自愈重启浏览器、`_applyFit` 直接
   返回、`control` 只放行 `RISK_ALLOWED_ACTIONS`（watch / clear-risk / set-target），
@@ -172,7 +174,11 @@ npm pack                         # 产物应包含 dsh/、skills/、lib/、clien
 
 # 真机联调（不起 DSH，直接把 host 插件挂裸 http 上）：
 node tests/harness-live.mjs 3081
-curl http://127.0.0.1:3081/plugins/recruiting-view/state.json
+curl -c /tmp/rcp.cookies -H 'Sec-Fetch-Site: same-origin' \
+  -H 'X-RCP-Client-Nonce: manual-curl-client-nonce' \
+  http://127.0.0.1:3081/plugins/recruiting-view/state.json
+curl -b /tmp/rcp.cookies -H 'Sec-Fetch-Site: same-origin' \
+  http://127.0.0.1:3081/plugins/recruiting-view/frame.jpg -o /tmp/rcp-frame.jpg
 node tests/input-e2e.mjs 3081    # 端到端验证鼠标/滚轮/键盘真的进了页面
 
 # 隔离验证（不碰在跑的 GUI）：

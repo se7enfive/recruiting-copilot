@@ -54,14 +54,24 @@ if [ "${1:-}" = run ] && [ "${2:-}" = build ]; then
 fi
 if [ "${1:-}" = pack ] && [ "${2:-}" = --pack-destination ]; then
   printf '%s\n' "$*" >>"$FAKE_NPM_LOG"
-  touch "$3/joohw-boss-cli-0.6.5.tgz"
-  printf 'joohw-boss-cli-0.6.5.tgz\n'
+  case "$PWD" in
+    *recruiting-copilot-sjob*) archive=se7enfive-51job-cli-0.1.0.tgz ;;
+    *) archive=joohw-boss-cli-0.6.5.tgz ;;
+  esac
+  touch "$3/$archive"
+  printf '%s\n' "$archive"
   exit 0
 fi
 if [ "${1:-}" = install ] && [ "${2:-}" = -g ]; then
   printf '%s\n' "$*" >>"$FAKE_NPM_LOG"
   case "${3:-}" in
-    *boss*|*.tgz) executable=boss ;;
+    *51job*|*51job-cli*) executable=51job ;;
+    *boss*|*.tgz)
+      case "${3:-}" in
+        *51job*) executable=51job ;;
+        *) executable=boss ;;
+      esac
+      ;;
     *) executable=liepin ;;
   esac
   cat >"$FAKE_NPM_PREFIX/bin/$executable" <<'INNER'
@@ -191,6 +201,23 @@ test_packed_fork_upgrade_does_not_preemptively_remove_existing_boss() {
   esac
 }
 
+test_51job_source_defaults_to_upstream_and_installs_executable() {
+  sandbox=$(mktemp -d)
+  trap 'rm -rf "$sandbox"' EXIT HUP INT TERM
+  make_fake_tools "$sandbox"
+
+  run_installer "$sandbox" >/dev/null
+
+  second_clone=$(sed -n '2p' "$sandbox/git.log")
+  case "$second_clone" in
+    'clone --depth 1 --branch main https://github.com/se7enfive/51job-cli.git '*) ;;
+    *) fail "default 51job CLI clone source (got $second_clone)" ;;
+  esac
+  [ -x "$sandbox/npm-prefix/bin/51job" ] || fail '51job executable was not installed'
+  grep '^install -g ' "$sandbox/npm.log" | grep '51job' >/dev/null ||
+    fail '51job package was not installed'
+}
+
 test_check_only_does_not_install_or_edit_profile() {
   sandbox=$(mktemp -d)
   trap 'rm -rf "$sandbox"' EXIT HUP INT TERM
@@ -207,5 +234,6 @@ test_second_run_keeps_one_profile_block
 test_existing_path_leaves_profile_unchanged
 test_boss_source_defaults_to_fork_and_can_be_overridden
 test_packed_fork_upgrade_does_not_preemptively_remove_existing_boss
+test_51job_source_defaults_to_upstream_and_installs_executable
 test_check_only_does_not_install_or_edit_profile
 printf 'PASS: install-dependencies\n'

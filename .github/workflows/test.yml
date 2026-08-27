@@ -22,3 +22,7 @@ jobs:
           node-version: ${{ matrix.node }}
       # 零依赖、无 lockfile，不需要 install
       - run: npm test
+      - name: shell regression tests
+        run: |
+          sh tests/install-dependencies.test.sh
+          sh tests/register-workspace-skills.test.sh

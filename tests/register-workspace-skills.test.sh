@@ -6,6 +6,21 @@ REGISTER="$PROJECT_ROOT/skills/recruit-init/scripts/register-workspace-skills.sh
 TEST_ROOT=$(mktemp -d)
 trap 'rm -rf "$TEST_ROOT"' EXIT HUP INT TERM
 
+probe_symlink_support() {
+  probe=$(mktemp -d)
+  mkdir -p "$probe/target"
+  if ! ln -s target "$probe/link" 2>/dev/null || [ ! -L "$probe/link" ]; then
+    rm -rf "$probe"
+    return 1
+  fi
+  rm -rf "$probe"
+}
+
+if ! probe_symlink_support; then
+  printf 'SKIP: register-workspace-skills (filesystem does not support native symlinks)\n'
+  exit 0
+fi
+
 fail() {
   printf 'FAIL: %s\n' "$1" >&2
   exit 1
@@ -16,12 +31,14 @@ make_workspace() {
   mkdir -p "$workspace/skills"
   cp -R "$PROJECT_ROOT/skills/ask-viy" "$workspace/skills/"
   cp -R "$PROJECT_ROOT/skills/resume-review" "$workspace/skills/"
+  cp -R "$PROJECT_ROOT/skills/recruit-daily-51job" "$workspace/skills/"
+  cp -R "$PROJECT_ROOT/skills/51job-env-setup" "$workspace/skills/"
 }
 
 assert_registered() {
   workspace=$1
   for adapter in .agents .claude .qoder; do
-    for skill in ask-viy resume-review; do
+    for skill in ask-viy resume-review recruit-daily-51job 51job-env-setup; do
       link=$workspace/$adapter/skills/$skill
       [ -L "$link" ] || fail "missing link: $link"
       [ "$(readlink "$link")" = "../../skills/$skill" ] ||
@@ -39,8 +56,8 @@ test_clean_and_idempotent_runs() {
   second=$(sh "$REGISTER" "$sandbox/workspace")
 
   assert_registered "$sandbox/workspace"
-  case "$first" in *'created=6 unchanged=0 preserved=0'*) ;; *) fail 'wrong first-run counts' ;; esac
-  case "$second" in *'created=0 unchanged=6 preserved=0'*) ;; *) fail 'wrong second-run counts' ;; esac
+  case "$first" in *'created=12 unchanged=0 preserved=0'*) ;; *) fail 'wrong first-run counts' ;; esac
+  case "$second" in *'created=0 unchanged=12 preserved=0'*) ;; *) fail 'wrong second-run counts' ;; esac
 }
 
 test_conflicting_destination_is_preserved() {

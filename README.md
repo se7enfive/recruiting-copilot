@@ -1,6 +1,6 @@
 # recruiting-copilot —— AI 招聘副驾
 
-给 HR / 猎头用的一套 AI 招聘工作流：**逼问式梳理岗位真实要求 → Boss直聘 + 猎聘 + 51job 三通道每日寻源初筛 → 打招呼 → 约面试 → 候选人台账 → 日报**。
+给 HR / 猎头用的一套 AI 招聘工作流：**逼问式梳理岗位真实要求 → BOSS直聘 + 猎聘双通道、51job 独立通道寻源初筛 → 打招呼 → 约面试 → 候选人台账 → 日报**。
 另有市场人才盘点、简历评估，以及从飞书邮箱按需收取猎聘 / BOSS 的简历附件。
 
 配合任意 AI 编程助手使用：Claude Code、Codex、workbuddy、qoderwork、MiniMax Code、Z code 等——
@@ -41,6 +41,8 @@
 > - **风控页熔断**：一旦页面落到 403 / verify / security-check，host 立刻停掉自愈重启、停掉
 >   贴合重发、拒绝一切导航与启动，面板顶部显示红色提示条，需人工确认后才解除。
 >   （被限期间继续访问会把恢复时间一路延长。）
+> - **浏览器路由有会话保护**：面板请求通过 loopback Host、同源 Fetch Metadata、客户端随机 nonce 和 HttpOnly、SameSite 会话 cookie
+>   校验；读取画面和控制浏览器的接口不会接受无来源或过期会话，控制与切标签接口只接受 POST。
 >
 > 如果你之前装过旧版本并在面板里手动操作过，建议 `git pull` 更新后重启 DSH 会话。
 > 细节与后续计划见 [#33](https://github.com/Viy1204/recruiting-copilot/issues/33)。
@@ -48,7 +50,7 @@
 ## 它帮你做什么
 
 - **岗位梳理**：一次一问的访谈，把「我要一个厉害的 XX」问成一份可执行的初筛标准——硬门槛、命脉技能、排除信号、目标公司、搜索词。同时产出对外 JD 与对内寻源笔记。
-- **每日招聘**：说一句「处理今天的招聘」，AI 就去查三个平台的未读、按你的标准主动搜人、初筛、经你确认后打招呼，然后补台账、出日报。
+- **每日招聘**：说一句「处理今天的招聘」，AI 就去查 BOSS 和猎聘的未读、按你的标准主动搜人、初筛、经你确认后打招呼，然后补台账、出日报；需要处理 51job 时说「处理今天的 51job 招聘」，走独立的 51job 单通道。
 - **市场盘点**：某个岗到底好不好招？一次深度调研说清市场供给、薪资水位、目标公司的人挖不挖得动，并附可推进名单。
 - **简历收取与评估**：直接丢本地简历，或让 AI 去飞书邮箱翻近期的猎聘 / BOSS 简历邮件，去重下载附件后走同一套 review、台账与面试档案流程。
 - **约面试**：查面试官忙闲、建带视频会议链接的日历日程、拉面试官进会、生成候选人邀约话术，面试档案自动同步。
@@ -107,7 +109,9 @@ claude plugin install recruiting-copilot
 
 - `/recruit-init` —— 初始化工作区（首次一次）
 - `/recruit-grill <岗位>` —— 梳理某个岗位的要求
-- `/recruit-daily` —— 处理今天的招聘（日常也可以直接说「处理今天的招聘」）
+- `/recruit-daily` —— 处理今天的招聘（BOSS + 猎聘双通道；日常也可以直接说「处理今天的招聘」）
+- `/recruit-daily-51job` —— 处理今天的 51job 招聘（51job 单通道）
+- `/51job-env-setup` —— 检查、安装并登录 51job CLI 环境
 - `/recruit-mapping <岗位>` —— 深度盘点某岗的市场人才
 - `/resume-review` —— 评估本地简历，或收取飞书邮箱的猎聘 / BOSS 简历附件后评估
 - `/interview-schedule` —— 约面试：日历 + 视频会议 + 拉面试官，档案台账同步
@@ -124,15 +128,15 @@ dsh plugin --profile web add git+https://github.com/Viy1204/recruiting-copilot.g
 
 （`web` 是 Web 界面 profile；`headless` 等其他 profile 同理，把 `web` 换成名字即可。）
 
-安装后**重启 DSH 会话**，本仓库 `skills/` 下的 7 个 skill 就会出现在任意工作区的
+安装后**重启 DSH 会话**，本仓库 `skills/` 下的 9 个 skill 就会出现在任意工作区的
 skill 目录里（不必把仓库克隆成工作区）：
-`ask-viy`、`recruit-init`、`recruit-grill`、`recruit-daily`、`resume-review`、
-`interview-schedule`、`market-talent-mapping`。
+`ask-viy`、`recruit-init`、`recruit-grill`、`recruit-daily`、`recruit-daily-51job`、
+`51job-env-setup`、`resume-review`、`interview-schedule`、`market-talent-mapping`。
 
 **附带功能——Web UI 右侧「招聘浏览器」面板**：DSH Web 界面右侧是一只**能直接上手操作的浏览器**，
-鼠标、滚轮、键盘、中文输入法、粘贴全都直通。**BOSS 和猎聘都是可用的源**，面板顶部一键切换；
-浏览器没起时在面板里点一下就能拉起——用的是两个 CLI 各自的 user-data-dir 和固定调试端口，
-登录态通用，之后跑 `boss` / `liepin` 命令会直连同一只，不会另开一只。
+鼠标、滚轮、键盘、中文输入法、粘贴全都直通。**BOSS 和猎聘是当前可用的两个面板源**，面板顶部一键切换；
+51job 当前不接入该面板，使用 `recruit-daily-51job` 和 `51job` CLI。浏览器没起时在面板里点一下就能拉起——
+用的是两个 CLI 各自的 user-data-dir 和固定调试端口，登录态通用，之后跑 `boss` / `liepin` 命令会直连同一只，不会另开一只。
 
 **两个源的默认模式不同**：BOSS 有头（真窗口，抢一次键盘焦点），猎聘无头。
 **不要为了不被打扰把 BOSS 改成无头**——无头的 `HeadlessChrome` UA 已实测招来 web 端登录限制，
@@ -168,6 +172,7 @@ dsh plugin --profile web remove recruiting-copilot   # 卸载
 你的工作区/
 ├── CONTEXT.md            ← 唯一事实源：初筛硬规则、在招岗位与优先级、术语表、决策记录
 ├── AGENTS.md             ← 告诉 AI 工具在这里怎么干活（路由 + 红线）
+├── .gitignore            ← 默认隔离 .workbuddy/ 与 runtime/ 本地招聘数据
 ├── skills/               ← 工作流文档的唯一内容源（随工作区走）
 ├── .agents/skills/       ← Codex / Agent Skills 项目级自动发现入口
 ├── .claude/skills/       ← Claude Code 项目级自动发现入口
@@ -181,6 +186,8 @@ dsh plugin --profile web remove recruiting-copilot   # 卸载
     ├── reports/          ← 本地日报与 review 汇总
     └── resumes/          ← 邮件简历附件 + 导入去重索引
 ```
+
+`.gitignore` 默认把 `.workbuddy/` 和整个 `runtime/` 排除在 Git 之外，避免 AI 会话、候选人信息、简历附件和日报等本地数据误提交；如果工作区已有数据，初始化/修复时不要覆盖它们。
 
 三个隐藏目录里只放指向 `skills/` 的链接，不会复制出三套内容。其他工具即使没有自己的
 skill 注册目录，也能从根目录 `AGENTS.md` 路由到同一套流程。ZCode 可以直接读 `AGENTS.md`；

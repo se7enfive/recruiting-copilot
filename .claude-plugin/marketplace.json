@@ -1,14 +1,14 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "recruiting-copilot",
-  "description": "AI 招聘副驾：岗位梳理 + 每日双通道寻源初筛 + 市场盘点 + 简历评估 + 约面试 + 台账日报闭环。",
+  "description": "AI 招聘副驾：岗位梳理 + BOSS/猎聘双通道与 51job 独立通道寻源初筛 + 市场盘点 + 简历评估 + 约面试 + 台账日报闭环。",
   "owner": {
     "name": "Viy Zhu"
   },
   "plugins": [
     {
       "name": "recruiting-copilot",
-      "description": "初始化招聘工作区、梳理岗位真实要求、每日 Boss直聘+猎聘寻源初筛打招呼、台账与日报。",
+      "description": "初始化招聘工作区、梳理岗位真实要求、运行 BOSS/猎聘双通道或 51job 独立通道寻源初筛、维护台账与日报。",
       "source": "./",
       "category": "productivity"
     }

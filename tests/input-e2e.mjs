@@ -8,6 +8,15 @@
 const harnessPort = Number(process.argv[2] ?? 3081);
 const cdpPort = Number(process.argv[3] ?? 53470);
 
+const clientNonce = "input-e2e-client-nonce";
+const stateUrl = `http://127.0.0.1:${harnessPort}/plugins/recruiting-view/state.json`;
+const stateResponse = await fetch(stateUrl, {
+  headers: { "sec-fetch-site": "same-origin", "x-rcp-client-nonce": clientNonce }
+});
+if (!stateResponse.ok) throw new Error(`state bootstrap failed: HTTP ${stateResponse.status}`);
+const sessionCookie = (stateResponse.headers.getSetCookie?.()[0] ?? stateResponse.headers.get("set-cookie"))?.split(";", 1)[0];
+if (!sessionCookie) throw new Error("state bootstrap did not return a session cookie");
+
 const targets = await (await fetch(`http://127.0.0.1:${cdpPort}/json/list`)).json();
 const page = targets.find((t) => t.type === "page" && /zhipin\.com/i.test(t.url ?? "")) ?? targets.find((t) => t.type === "page");
 if (!page) throw new Error("no page target");
@@ -48,7 +57,12 @@ await evaluate(`(() => {
 
 const post = (path, body) => fetch(`http://127.0.0.1:${harnessPort}/plugins/recruiting-view/${path}?source=boss`, {
   method: "POST",
-  headers: { "content-type": "application/json" },
+  headers: {
+    "content-type": "application/json",
+    "sec-fetch-site": "same-origin",
+    "x-rcp-client-nonce": clientNonce,
+    cookie: sessionCookie
+  },
   body: JSON.stringify(body)
 }).then((r) => r.json());
 

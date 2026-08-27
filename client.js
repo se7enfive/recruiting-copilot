@@ -21,6 +21,16 @@ window.__ModuleLoader__.load({
 		const h = react.createElement;
 
 		const BASE = "/plugins/recruiting-view";
+		function makeClientNonce() {
+			const source = globalThis.crypto;
+			if (typeof source?.randomUUID === "function") return source.randomUUID();
+			if (typeof source?.getRandomValues === "function") {
+				const bytes = source.getRandomValues(new Uint8Array(32));
+				return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+			}
+			return ""; // 没有 Web Crypto 时由 host 拒绝握手，不能降级到可预测 nonce。
+		}
+		const CLIENT_NONCE = makeClientNonce();
 		const MIN_W = 360;
 		const WIDTH_KEY = "rcp.panel.width";
 		const COLLAPSED_KEY = "rcp.panel.collapsed";
@@ -111,7 +121,8 @@ window.__ModuleLoader__.load({
 				flying = true;
 				fetch(`${BASE}/input?source=${encodeURIComponent(source())}`, {
 					method: "POST",
-					headers: { "content-type": "application/json" },
+					credentials: "same-origin",
+					headers: { "content-type": "application/json", "x-rcp-client-nonce": CLIENT_NONCE },
 					body: JSON.stringify({ events })
 				})
 					.catch(() => {})
@@ -185,6 +196,10 @@ window.__ModuleLoader__.load({
 		// ── 面板组件 ────────────────────────────────────────────────────
 		function BrowserPanel() {
 			const [state, setState] = react.useState(null);
+			/** host 通过同源 state.json 首次下发 HttpOnly 会话 cookie；未完成握手前不发送控制请求。 */
+			const [sessionReady, setSessionReady] = react.useState(false);
+			const sessionReadyRef = react.useRef(false);
+			sessionReadyRef.current = sessionReady;
 			/** 一次性提示（控制动作被拒绝等），点掉即消失。 */
 			const [notice, setNotice] = react.useState(null);
 			const [activeSource, setActiveSource] = react.useState("boss");
@@ -237,9 +252,11 @@ window.__ModuleLoader__.load({
 			if (queueRef.current === null) queueRef.current = makeInputQueue(() => sourceRef.current);
 
 			const control = react.useCallback((action, payload) => {
+				if (!sessionReadyRef.current) return Promise.resolve({ ok: false, error: "recruiting-view session is not ready" });
 				return fetch(`${BASE}/control?source=${encodeURIComponent(sourceRef.current)}`, {
 					method: "POST",
-					headers: { "content-type": "application/json" },
+					credentials: "same-origin",
+					headers: { "content-type": "application/json", "x-rcp-client-nonce": CLIENT_NONCE },
 					body: JSON.stringify(Object.assign({ action }, payload ?? {}))
 				})
 					.then((r) => r.json())
@@ -250,8 +267,19 @@ window.__ModuleLoader__.load({
 			react.useEffect(() => {
 				let alive = true;
 				const loadState = () => {
-					fetch(`${BASE}/state.json`, { cache: "no-store" })
-						.then((r) => (r.ok ? r.json() : null))
+					fetch(`${BASE}/state.json`, {
+						cache: "no-store",
+						credentials: "same-origin",
+						headers: { "x-rcp-client-nonce": CLIENT_NONCE }
+					})
+						.then((r) => {
+							if (r.ok) {
+								setSessionReady(true);
+								return r.json();
+							}
+							setSessionReady(false);
+							return null;
+						})
 						.then((data) => {
 							if (alive && data) setState(data);
 						})
@@ -294,7 +322,7 @@ window.__ModuleLoader__.load({
 				return () => {
 					control("watch", { on: false });
 				};
-			}, [collapsed, control]);
+			}, [collapsed, control, sessionReady]);
 
 			const sources = (state?.sources ?? []).filter((s) => s != null);
 			const active = sources.find((s) => s.name === activeSource) ?? sources[0];
@@ -322,7 +350,7 @@ window.__ModuleLoader__.load({
 					height: vp.height,
 					deviceScaleFactor: Math.min(Math.max(window.devicePixelRatio || 1, 1), 2)
 				});
-			}, [fit, collapsed, mode, control, sourceName]);
+			}, [fit, collapsed, mode, control, sourceName, sessionReady]);
 
 			// 断线后重连：重挂 MJPEG（img 的 src 不变时不会自动重连）
 			react.useEffect(() => {

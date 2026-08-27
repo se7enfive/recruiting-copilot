@@ -61,6 +61,7 @@ sh skills/recruit-init/scripts/install-dependencies.sh
 <workspace>/
 ├── AGENTS.md                 ← 从本 skill 的 templates/AGENTS.md 复制
 ├── CONTEXT.md                ← 从 templates/CONTEXT.md 复制
+├── .gitignore                ← 从 templates/.gitignore 复制，隔离本地招聘运行数据
 ├── skills/                   ← 把模板仓库 skills/ 全部拷入（含 recruit-init 与 references/），
 │                                这是所有工具共用的唯一 skill 内容源，工作区从此自足
 ├── .agents/skills/           ← 指向 skills/ 的项目级链接（Codex / Agent Skills 约定）
@@ -85,7 +86,7 @@ sh skills/recruit-init/scripts/install-dependencies.sh
 要点：
 - `AGENTS.md` / `CONTEXT.md` 原样复制模板，**不要现场即兴改写结构**——两份文件的分区是后续工作流的接口。
 - `skills/` 是唯一内容源；不要向工具目录重复复制 skill，避免后续版本不一致。
-- 新建工作区时同时创建 `runtime/reports/` 和 `runtime/resumes/`；修复模式只补缺失目录，不动已有附件或索引。
+- 新建工作区时同时创建 `runtime/reports/` 和 `runtime/resumes/`，并复制 `templates/.gitignore` 为工作区根 `.gitignore`；修复模式只补缺失目录和 `.gitignore`，不动已有附件或索引。
 
 复制完成后，定位本 `SKILL.md` 同目录下的 `scripts/register-workspace-skills.sh`，执行：
 
@@ -120,4 +121,4 @@ sh skills/recruit-init/scripts/register-workspace-skills.sh <workspace>
 汇报三件事：
 1. 建了什么（目录树 + 两个核心文件的作用一句话 + 已注册的工具入口）；
 2. 还欠什么（未装的 CLI、未登录的账号、未梳理的岗位）；
-3. 怎么用：**以后每天打开这个工作区，说"处理今天的招聘"即可**（工作流见 `skills/recruit-daily/SKILL.md`）。
+3. 怎么用：**以后每天打开这个工作区，说"处理今天的招聘"即可**（BOSS + 猎聘双通道；51job 说"处理今天的 51job 招聘"，走 `recruit-daily-51job`）。工作流见 `skills/recruit-daily/SKILL.md` 与 `skills/recruit-daily-51job/SKILL.md`。

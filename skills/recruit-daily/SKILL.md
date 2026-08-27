@@ -8,7 +8,8 @@ description: >
 
 # recruit-daily —— 每日招聘流水线
 
-每日主力动作：把 Boss 直聘 + 猎聘两个渠道的「查未读 → 主动寻源 → 初筛 → 打招呼 → 建档 → 出日报」串成一条流水线。
+每日主力动作：把 BOSS 直聘 + 猎聘两个渠道的「查未读 → 主动寻源 → 初筛 → 打招呼 → 建档 → 出日报」串成一条流水线。
+**51job 不在本流程内**；需要处理前程无忧时，读取 `skills/recruit-daily-51job/SKILL.md`，走独立单通道。
 
 **这是编排文档**：CLI 命令细节见 [`references/channels.md`](references/channels.md)，
 台账与日报格式见 [`references/ledger-and-report.md`](references/ledger-and-report.md)。
