@@ -47,7 +47,7 @@
 
 ## 每轮寻源后必做（关键词迭代闭环）
 
-1. 新候选人按去重键（姓名+应聘岗位）append 进 `02-sourcing/dedup-ledger.csv`，定状态、记原因。
+1. 新候选人按去重键（**`resumeId` 主键**；无 ID 时用复合指纹，禁止只用打码名+岗位）append 进 `02-sourcing/dedup-ledger.csv`，定状态、记原因。
 2. 进面试流程者建 `03-interview/<姓名>.md`（套 `_shared/templates/interview-record.md`）。
 3. **寻源前先读** `CONTEXT.md` 的关键词迭代表；**跑完从「初筛通过/入选」的简历反向提取真实搜索词**
    回填该表（有效词 / 无效词 / 积极信号 / 拒绝模式）。

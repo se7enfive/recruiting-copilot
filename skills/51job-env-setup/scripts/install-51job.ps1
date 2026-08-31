@@ -7,7 +7,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$SJOB_CLI_SOURCE = if ($env:SJOB_CLI_SOURCE) { $env:SJOB_CLI_SOURCE } else { "git+https://github.com/se7enfive/51job-cli.git#main" }
+$SJOB_CLI_SOURCE = if ($env:SJOB_CLI_SOURCE) { $env:SJOB_CLI_SOURCE } else { "51job-cli" }
 
 function Die([string]$msg) {
     Write-Host "Error: $msg" -ForegroundColor Red
@@ -17,7 +17,6 @@ function Die([string]$msg) {
 # --- 1. 前置检查 ---
 if (-not (Get-Command node -ErrorAction SilentlyContinue)) { Die "Node.js 20 or newer is required (node not found)." }
 if (-not (Get-Command npm -ErrorAction SilentlyContinue)) { Die "npm is required (npm not found)." }
-if (-not (Get-Command git -ErrorAction SilentlyContinue)) { Die "git is required (git not found)." }
 
 $nodeMajor = & node -p "process.versions.node.split('.')[0]" 2>$null
 if ($nodeMajor -notmatch '^\d+$') { Die "could not parse Node.js version: $nodeMajor" }
@@ -54,32 +53,43 @@ if (Get-Command 51job -ErrorAction SilentlyContinue) {
     exit 0
 }
 
-# --- 4. 源码构建安装 ---
-$repo = $SJOB_CLI_SOURCE -replace '^git\+', ''
-$repo = $repo -replace '#.*$', ''
-$ref = if ($SJOB_CLI_SOURCE -match '#([^#]+)$') { $Matches[1] } else { 'main' }
-if ([string]::IsNullOrWhiteSpace($repo)) { Die "51job CLI repository is empty." }
+# --- 4. 安装（默认 npm 包；git+ 源才走 clone/build/pack）---
+$installSource = $SJOB_CLI_SOURCE
+$buildDir = $null
+if ($SJOB_CLI_SOURCE -like 'git+*#*') {
+    if (-not (Get-Command git -ErrorAction SilentlyContinue)) { Die "git is required to build the 51job CLI from a git source." }
+    $repo = $SJOB_CLI_SOURCE -replace '^git\+', ''
+    $repo = $repo -replace '#.*$', ''
+    $ref = if ($SJOB_CLI_SOURCE -match '#([^#]+)$') { $Matches[1] } else { 'main' }
+    if ([string]::IsNullOrWhiteSpace($repo)) { Die "51job CLI repository is empty." }
 
-$buildDir = Join-Path $env:TEMP ("51job-cli-" + [System.IO.Path]::GetRandomFileName())
-try {
-    Write-Host "Cloning 51job CLI ($ref)..."
-    git clone --depth 1 --branch $ref $repo (Join-Path $buildDir "source")
-    Write-Host "Building 51job CLI..."
-    Push-Location (Join-Path $buildDir "source")
+    $buildDir = Join-Path $env:TEMP ("51job-cli-" + [System.IO.Path]::GetRandomFileName())
     try {
-        npm ci
-        npm run build
-        npm pack --pack-destination $buildDir
-    } finally {
-        Pop-Location
+        Write-Host "Cloning 51job CLI ($ref)..."
+        git clone --depth 1 --branch $ref $repo (Join-Path $buildDir "source")
+        Write-Host "Building 51job CLI..."
+        Push-Location (Join-Path $buildDir "source")
+        try {
+            npm ci
+            npm run build
+            npm pack --pack-destination $buildDir
+        } finally {
+            Pop-Location
+        }
+        $tgz = Get-ChildItem -Path $buildDir -Filter "*.tgz" | Select-Object -First 1
+        if (-not $tgz) { Die "51job CLI build did not produce a package archive." }
+        $installSource = $tgz.FullName
+    } catch {
+        if ($buildDir -and (Test-Path $buildDir)) { Remove-Item -Recurse -Force $buildDir }
+        throw
     }
-    $tgz = Get-ChildItem -Path $buildDir -Filter "*.tgz" | Select-Object -First 1
-    if (-not $tgz) { Die "51job CLI build did not produce a package archive." }
+}
 
+try {
     Write-Host "Installing 51job CLI globally..."
-    npm install -g $tgz.FullName
+    npm install -g $installSource
 } finally {
-    if (Test-Path $buildDir) { Remove-Item -Recurse -Force $buildDir }
+    if ($buildDir -and (Test-Path $buildDir)) { Remove-Item -Recurse -Force $buildDir }
 }
 
 # --- 5. 验证 ---

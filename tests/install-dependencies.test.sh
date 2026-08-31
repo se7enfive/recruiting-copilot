@@ -201,21 +201,37 @@ test_packed_fork_upgrade_does_not_preemptively_remove_existing_boss() {
   esac
 }
 
-test_51job_source_defaults_to_upstream_and_installs_executable() {
+test_51job_source_defaults_to_npm_and_installs_executable() {
   sandbox=$(mktemp -d)
   trap 'rm -rf "$sandbox"' EXIT HUP INT TERM
   make_fake_tools "$sandbox"
 
   run_installer "$sandbox" >/dev/null
 
-  second_clone=$(sed -n '2p' "$sandbox/git.log")
-  case "$second_clone" in
-    'clone --depth 1 --branch main https://github.com/se7enfive/51job-cli.git '*) ;;
-    *) fail "default 51job CLI clone source (got $second_clone)" ;;
-  esac
+  if [ -f "$sandbox/git.log" ]; then
+    if grep '51job-cli' "$sandbox/git.log" >/dev/null; then
+      fail 'default 51job install cloned git instead of using npm'
+    fi
+  fi
   [ -x "$sandbox/npm-prefix/bin/51job" ] || fail '51job executable was not installed'
-  grep '^install -g ' "$sandbox/npm.log" | grep '51job' >/dev/null ||
-    fail '51job package was not installed'
+  sjob_install=$(grep '^install -g ' "$sandbox/npm.log" | grep '51job' | sed -n '1p')
+  assert_equals 'install -g 51job-cli' "$sjob_install" 'default 51job CLI npm source'
+}
+
+test_51job_git_source_override_still_builds() {
+  sandbox=$(mktemp -d)
+  trap 'rm -rf "$sandbox"' EXIT HUP INT TERM
+  make_fake_tools "$sandbox"
+
+  SJOB_CLI_SOURCE='git+https://github.com/se7enfive/51job-cli.git#main' \
+    run_installer "$sandbox" >/dev/null
+
+  clone_line=$(grep '51job-cli.git' "$sandbox/git.log" || true)
+  case "$clone_line" in
+    'clone --depth 1 --branch main https://github.com/se7enfive/51job-cli.git '*) ;;
+    *) fail "overridden 51job CLI clone source (got $clone_line)" ;;
+  esac
+  [ -x "$sandbox/npm-prefix/bin/51job" ] || fail '51job executable was not installed from git override'
 }
 
 test_check_only_does_not_install_or_edit_profile() {
@@ -234,6 +250,7 @@ test_second_run_keeps_one_profile_block
 test_existing_path_leaves_profile_unchanged
 test_boss_source_defaults_to_fork_and_can_be_overridden
 test_packed_fork_upgrade_does_not_preemptively_remove_existing_boss
-test_51job_source_defaults_to_upstream_and_installs_executable
+test_51job_source_defaults_to_npm_and_installs_executable
+test_51job_git_source_override_still_builds
 test_check_only_does_not_install_or_edit_profile
 printf 'PASS: install-dependencies\n'

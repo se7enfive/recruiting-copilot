@@ -3,7 +3,7 @@ set -eu
 
 BOSS_CLI_SOURCE=${BOSS_CLI_SOURCE:-git+https://github.com/Viy1204/boss-cli.git#main}
 LIEPIN_CLI_SOURCE=${LIEPIN_CLI_SOURCE:-@viyzhu/liepin-cli}
-SJOB_CLI_SOURCE=${SJOB_CLI_SOURCE:-git+https://github.com/se7enfive/51job-cli.git#main}
+SJOB_CLI_SOURCE=${SJOB_CLI_SOURCE:-51job-cli}
 PROFILE_BLOCK_START='# >>> recruiting-copilot npm global bin >>>'
 PROFILE_BLOCK_END='# <<< recruiting-copilot npm global bin <<<'
 CHECK_ONLY=0

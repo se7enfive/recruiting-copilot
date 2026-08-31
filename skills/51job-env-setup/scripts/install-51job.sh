@@ -3,7 +3,7 @@
 # 用法: sh install-51job.sh [--check-only]
 set -eu
 
-SJOB_CLI_SOURCE=${SJOB_CLI_SOURCE:-git+https://github.com/se7enfive/51job-cli.git#main}
+SJOB_CLI_SOURCE=${SJOB_CLI_SOURCE:-51job-cli}
 PROFILE_BLOCK_START='# >>> recruiting-copilot npm global bin >>>'
 PROFILE_BLOCK_END='# <<< recruiting-copilot npm global bin <<<'
 CHECK_ONLY=0
@@ -13,13 +13,14 @@ usage() {
 Usage: install-51job.sh [--check-only]
 
 一键安装 51job（前程无忧）招聘 CLI：
-  1. 检查 Node.js / npm / git
-  2. 从 GitHub 拉取 51job-cli 源码构建并全局安装
+  1. 检查 Node.js / npm
+  2. 从 npm 官方源全局安装 51job-cli（≥ 0.1.1）
   3. macOS/Linux 修复 npm 全局 bin 的 PATH
   4. 验证 51job --version
 
 环境变量:
-  SJOB_CLI_SOURCE  51job CLI 安装源（默认 git+https://github.com/se7enfive/51job-cli.git#main）
+  SJOB_CLI_SOURCE  51job CLI 安装源（默认 51job-cli；钉版本 51job-cli@0.1.1；
+                   git 开发分支用 git+https://github.com/se7enfive/51job-cli.git#main）
 EOF
 }
 
@@ -123,34 +124,41 @@ if command -v 51job >/dev/null 2>&1; then
   exit 0
 fi
 
-# --- 4. 源码构建安装 ---
-command -v git >/dev/null 2>&1 || die 'git is required to build the 51job CLI.'
-sjob_repository=${SJOB_CLI_SOURCE#git+}
-sjob_repository=${sjob_repository%#*}
-sjob_ref=${SJOB_CLI_SOURCE##*#}
-[ -n "$sjob_repository" ] || die '51job CLI repository is empty.'
-[ -n "$sjob_ref" ] || die '51job CLI git ref is empty.'
+# --- 4. 安装（默认 npm 包；git+ 源才走 clone/build/pack）---
+sjob_install_source=$SJOB_CLI_SOURCE
+sjob_build_dir=''
+case "$SJOB_CLI_SOURCE" in
+  git+*'#'*)
+    command -v git >/dev/null 2>&1 || die 'git is required to build the 51job CLI from a git source.'
+    sjob_repository=${SJOB_CLI_SOURCE#git+}
+    sjob_repository=${sjob_repository%#*}
+    sjob_ref=${SJOB_CLI_SOURCE##*#}
+    [ -n "$sjob_repository" ] || die '51job CLI repository is empty.'
+    [ -n "$sjob_ref" ] || die '51job CLI git ref is empty.'
 
-sjob_build_dir=$(mktemp -d "${TMPDIR:-/tmp}/51job-cli.XXXXXX")
-cleanup_sjob_build() {
-  rm -rf "$sjob_build_dir"
-}
-trap cleanup_sjob_build 0 HUP INT TERM
+    sjob_build_dir=$(mktemp -d "${TMPDIR:-/tmp}/51job-cli.XXXXXX")
+    cleanup_sjob_build() {
+      rm -rf "$sjob_build_dir"
+    }
+    trap cleanup_sjob_build 0 HUP INT TERM
 
-printf 'Cloning 51job CLI (%s)...\n' "$sjob_ref"
-git clone --depth 1 --branch "$sjob_ref" "$sjob_repository" "$sjob_build_dir/source"
-printf 'Building 51job CLI...\n'
-(
-  cd "$sjob_build_dir/source"
-  npm ci
-  npm run build
-  npm pack --pack-destination "$sjob_build_dir"
-)
-set -- "$sjob_build_dir"/*.tgz
-[ "$#" -eq 1 ] && [ -f "$1" ] || die '51job CLI build did not produce exactly one package archive.'
+    printf 'Cloning 51job CLI (%s)...\n' "$sjob_ref"
+    git clone --depth 1 --branch "$sjob_ref" "$sjob_repository" "$sjob_build_dir/source"
+    printf 'Building 51job CLI...\n'
+    (
+      cd "$sjob_build_dir/source"
+      npm ci
+      npm run build
+      npm pack --pack-destination "$sjob_build_dir"
+    )
+    set -- "$sjob_build_dir"/*.tgz
+    [ "$#" -eq 1 ] && [ -f "$1" ] || die '51job CLI build did not produce exactly one package archive.'
+    sjob_install_source=$1
+    ;;
+esac
 
 printf 'Installing 51job CLI globally...\n'
-npm install -g "$1"
+npm install -g "$sjob_install_source"
 
 # --- 5. 验证 ---
 sjob_executable=$npm_bin/51job

@@ -22,8 +22,10 @@ sh skills/recruit-init/scripts/install-dependencies.sh
 
 脚本会检查 Node.js，安装 Boss / 猎聘 / 51job 三个 CLI，并在 macOS 等环境中自动修复 npm
 全局命令的 `PATH`。默认安装已适配当前 Boss 前端的维护版：
-`git+https://github.com/Viy1204/boss-cli.git#main`。如需替换来源，可在运行前设置
-`BOSS_CLI_SOURCE`（猎聘为 `LIEPIN_CLI_SOURCE`，51job 为 `SJOB_CLI_SOURCE`）。
+`git+https://github.com/Viy1204/boss-cli.git#main`。51job 默认从 npm 官方源装 `51job-cli`
+（≥ 0.1.1）。如需替换来源，可在运行前设置 `BOSS_CLI_SOURCE`（猎聘为 `LIEPIN_CLI_SOURCE`，
+51job 为 `SJOB_CLI_SOURCE`；钉版本用 `51job-cli@0.1.1`，跟 git 开发分支用
+`git+https://github.com/se7enfive/51job-cli.git#main`）。
 
 如果当前 agent 没有全局安装权限，先给同一脚本加 `--check-only`
 获取诊断结果。**无论是权限、Node/npm/git 缺失、网络、构建还是包安装失败，

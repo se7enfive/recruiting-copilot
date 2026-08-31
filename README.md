@@ -63,7 +63,7 @@
 2. 运行下方「安装与使用」里的依赖安装脚本。脚本一并装三个平台的 CLI：Boss CLI 是
    [`Viy1204/boss-cli`](https://github.com/Viy1204/boss-cli) 维护版——它跟着 Boss 前端改版走，
    带着当前的兼容与安全基线；猎聘为 `@viyzhu/liepin-cli`；51job 为
-   [`se7enfive/51job-cli`](https://github.com/se7enfive/51job-cli)（从 git 源构建）。
+   [`51job-cli`](https://www.npmjs.com/package/51job-cli)（npm 官方源，≥ 0.1.1）。
    macOS 上如果 npm 全局命令不在 `PATH`，脚本会幂等地改一次当前
    shell 的配置文件（zsh 写 `~/.zprofile`，bash 写 `~/.bash_profile`）。
 3. 三个平台各扫码登录一次（登录态存浏览器的 user-data-dir 里，一次能管很久）：
