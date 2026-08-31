@@ -62,6 +62,8 @@ description: >
 
 6. **补台账** `02-sourcing/dedup-ledger.csv`（去重键 = **`resumeId`**；没有 ID 时才退回复合指纹，禁止只用打码名+岗位）。格式见 ledger-and-report-51job.md。台账是**唯一事实源**。
    - 列表/详情 JSON 里的 `resumeId` 必须写入台账 `resumeId` 列。回访用 `inspect --resume-id` / `talent-detail --resume-id`，不要按姓名重搜。
+   - **凡本轮 inspect 过详情的候选人，同步补录 `人才简历详情台账.csv`**（多段工作/教育/技能/求职意向/直链，同 resumeId 更新不新增）。
+     规范与生成脚本见 ledger-and-report-51job.md「人才简历详情台账」。
    - **完成判据**：本轮接触过的每个候选人在台账里有且仅有一行；有 `resumeId` 的不重复；无重复序号；按岗位计数与本轮处理人数对得上。
 
 7. **出日报**：
