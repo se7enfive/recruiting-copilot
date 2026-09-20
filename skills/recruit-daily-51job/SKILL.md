@@ -45,7 +45,7 @@ description: >
 
 2. **定寻源岗位与优先级**：读 CONTEXT「在招岗位与优先级」，按优先级分配今天的额度。
 
-3. **寻源（51job 两个入口都跑）**，命令与坑见 channels-51job.md（对齐 51job-cli ≥ 0.1.1）：
+3. **寻源（51job 两个入口都跑）**，命令与坑见 channels-51job.md（对齐 51job-cli ≥ 0.1.2）：
    - **推荐池**：`51job recommend <岗位> --json`（姓名不打码，带 `forJob` 字段）。
    - **按职位搜索（优先）**：`51job search --position <职位名> --json`（锁定该职位并注入城市/学历）。
    - **关键词搜索**：`51job search "<词>" --json`（与 `--position` 互斥；**没有 `--job`**）。
@@ -62,7 +62,7 @@ description: >
 
 6. **补台账** `02-sourcing/dedup-ledger.csv`（去重键 = **`resumeId`**；没有 ID 时才退回复合指纹，禁止只用打码名+岗位）。格式见 ledger-and-report-51job.md。台账是**唯一事实源**。
    - 列表/详情 JSON 里的 `resumeId` 必须写入台账 `resumeId` 列。回访用 `inspect --resume-id` / `talent-detail --resume-id`，不要按姓名重搜。
-   - **凡本轮 inspect 过详情的候选人，同步补录 `人才简历详情台账.csv`**（多段工作/教育/技能/求职意向/直链，同 resumeId 更新不新增）。
+   - **凡本轮通过 `inspect`、`recommend --inspect` 或 `talent-detail` 获取详情的候选人，同步补录 `人才简历详情台账.csv`**（多段工作/教育/技能/求职意向/直链，同 resumeId 更新不新增）。
      规范与生成脚本见 ledger-and-report-51job.md「人才简历详情台账」。
    - **完成判据**：本轮接触过的每个候选人在台账里有且仅有一行；有 `resumeId` 的不重复；无重复序号；按岗位计数与本轮处理人数对得上。
 
@@ -82,7 +82,10 @@ description: >
 - 用户在**本轮明确授权**「合适的直接打招呼」即视为本轮持续授权，可直接打，但**逐一回报**打了谁；
   跨轮不自动延续，明天要重新授权。
 - **提前看一眼再 Hi**：
-  - 已有 `resumeId`：`51job inspect --resume-id <ID> --json`（纯看）；要 Hi 再加 `--job-id <职位ID> --hi`。
+  - 已有 `resumeId`（按来源分流）：
+    - 搜索池：`51job inspect --resume-id <ID> --json`（纯看）；要 Hi 再加 `--job-id <职位ID> --hi`。
+    - 投递/聊天：`51job talent-detail --resume-id <ID> --json`（`--hi` 是免费「回复」）。
+    - 推荐池：`51job recommend <岗位> --inspect <姓名或序号>`（推荐池详情不按 resumeId 重搜）。
   - 搜索池尚无 ID：`51job greet <姓名> --job <岗> --dry-run` 或 `51job inspect <姓名> --job <岗> --json`。
   - 投递/聊天来源用 `talent-detail`，不要对投递者走搜索池耗点 Hi。
 - **遇每日沟通额度上限 / 付费弹层 / `quota_exhausted`**：停下问用户，别自己决定花付费权益，**不要重试 Hi**。

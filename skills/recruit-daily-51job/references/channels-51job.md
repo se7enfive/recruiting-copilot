@@ -1,7 +1,7 @@
 # 51job 通道命令与坑
 
 命令细节的权威是 `51job --help` / `51job <cmd> --help`；本文件只放**编排流程实际用到的调用形态**和实测踩过的坑。
-对齐 **51job-cli ≥ 0.1.1**。51job-cli 驱动本机真实 Chrome（**默认有头**，窗口弹出是正常现象，不是故障）。命令之间浏览器**跨命令常驻**，
+对齐 **51job-cli ≥ 0.1.2**。51job-cli 驱动本机真实 Chrome（**默认有头**，窗口弹出是正常现象，不是故障）。命令之间浏览器**跨命令常驻**，
 登录态持久化在 `~/.51job-cli/.cache/`——**这是账号敏感数据，绝不读取/导出/转发**。
 
 ## 命令速查
@@ -20,8 +20,9 @@
 | 逐个打招呼（先看再 Hi） | `51job greet <姓名> --job <岗> --dry-run` → 确认 → 再 `--no-confirm` | `--job` 是 greet/inspect 的搜索兜底词，不是 search 的参数 |
 | 搜索池详情 | `51job inspect <姓名> --job <岗> --json` | 搜索池来源；`--hi` = 立即Hi聊（**耗点数**） |
 | 投递/聊天详情 | `51job talent-detail <姓名> --json` | 人才管理页来源；`--hi` = 免费「回复」 |
-| 直链详情（推荐回访） | `51job inspect --resume-id <ID> --json` | 不经搜索、不受排序/虚拟列表影响；要 Hi 必须再带 `--job-id` |
-| 打开会话 | `51job chat <姓名> [--index N] [--unread]` | 同名用序号；`--unread` 时序号与 `list --unread` 对齐 |
+| 搜索池直链详情 | `51job inspect --resume-id <ID> --json` | 搜索池来源；不经搜索、不受排序/虚拟列表影响；要 Hi 必须再带 `--job-id` |
+| 投递/聊天直链详情 | `51job talent-detail --resume-id <ID> --json` | 投递/聊天来源；要 Hi 再带 `--job-id`（免费「回复」） |
+| 打开会话 | `51job chat <姓名> [--index N] [--unread]` | `--index` 只认 `list` 输出的 `#` 序号，**不要用 search 序号**；`--unread` 时与 `list --unread` 对齐 |
 | 发消息 | `51job send --text "话术"` | 先 `chat`；失败**不要盲着重发**（可能已发出） |
 | 会话操作 | `51job action resume\|unsuitable\|wechat\|phone\|interview\|note` | **unsuitable 默认二次确认**，`--no-confirm` 跳过 |
 | 在线简历截图 | `51job preview <姓名>` | 耗每日查看额度；OCR 默认关，需 `51JOB_RESUME_OCR=1` 才上传云端 |
@@ -36,9 +37,9 @@
 | 投递箱 | `list` | `talent-detail` | 免费「回复」 |
 | 按职位投递/扩充 | `positions --candidates` | 视 `source`：delivery → `talent-detail`；search → `inspect` | 同上 |
 | 主动搜索 | `search` | `inspect` | 立即Hi聊，耗点数 |
-| 望远镜 | `recommend` | `inspect` | 耗点数 |
+| 望远镜 | `recommend` | `recommend --inspect` | 耗点数 |
 
-已落台账的人**不要按姓名/序号再搜**，用 `--resume-id`。
+已落台账的人按来源回访：搜索池用 `inspect --resume-id`，投递/聊天用 `talent-detail --resume-id`；推荐池用 `recommend --inspect` 按推荐列表定位。不要只按姓名/序号重搜。
 
 ## `search --json`（0.1.1 breaking）
 

@@ -55,7 +55,7 @@ fi
 if [ "${1:-}" = pack ] && [ "${2:-}" = --pack-destination ]; then
   printf '%s\n' "$*" >>"$FAKE_NPM_LOG"
   case "$PWD" in
-    *recruiting-copilot-sjob*) archive=se7enfive-51job-cli-0.1.0.tgz ;;
+    *recruiting-copilot-sjob*) archive=se7enfive-51job-cli-0.1.2.tgz ;;
     *) archive=joohw-boss-cli-0.6.5.tgz ;;
   esac
   touch "$3/$archive"

@@ -14,12 +14,12 @@ Usage: install-51job.sh [--check-only]
 
 一键安装 51job（前程无忧）招聘 CLI：
   1. 检查 Node.js / npm
-  2. 从 npm 官方源全局安装 51job-cli（≥ 0.1.1）
+  2. 从 npm 官方源全局安装 51job-cli（≥ 0.1.2）
   3. macOS/Linux 修复 npm 全局 bin 的 PATH
   4. 验证 51job --version
 
 环境变量:
-  SJOB_CLI_SOURCE  51job CLI 安装源（默认 51job-cli；钉版本 51job-cli@0.1.1；
+  SJOB_CLI_SOURCE  51job CLI 安装源（默认 51job-cli；钉版本 51job-cli@0.1.2；
                    git 开发分支用 git+https://github.com/se7enfive/51job-cli.git#main）
 EOF
 }

@@ -19,7 +19,7 @@
 
 - **序号**：接最后一行 +1（末号可能不连续，取更大值起）。
 - **resumeId**：51job 候选人持久键。从 `search --json` 的 `.hits[].resumeId`、`inspect`/`talent-detail --json` 的 `resumeId` 写入。
-  有 ID 后回访一律 `inspect --resume-id` / `talent-detail --resume-id`，不要按姓名重搜。空着只允许「尚未打开详情」的列表阶段，打开详情后必须补。
+  有 ID 后按来源回访：搜索池用 `inspect --resume-id`，投递/聊天用 `talent-detail --resume-id`；推荐池用 `recommend --inspect` 按推荐列表定位。不要按姓名重搜。空着只允许「尚未打开详情」的列表阶段，打开详情后必须补。
 - **姓名**：51job 搜索是打码名（`张**`）。推荐池（recommend）不打码。日报里搜索池名字**保持打码**。
 - **应聘岗位**：用 CONTEXT「在招岗位」表里的岗位名，与既有行一致，别造同义词。
 - **评级**：⭐~⭐⭐⭐（命脉强 = ⭐⭐⭐）。
